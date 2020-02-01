@@ -1,4 +1,4 @@
-pragma solidity 0.6.1;
+pragma solidity ^0.5.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721Full.sol";
 
@@ -7,7 +7,7 @@ contract AuctionItem is ERC721Full {
 string[] public auctionItems;
 mapping(string => bool) auctionItemExists;
 
-constructor() ERC721Full(AuctionItem, AUC) public {
+constructor() ERC721Full("AuctionItem", "AUC") public {
 
 }
 
