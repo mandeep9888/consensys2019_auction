@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import Web3 from 'web3'
 import './App.css';
-import AuctionItem from '../abis/AuctionItem.json'
+import AuctionFactory from '../abis/AuctionFactory.json'
 
 class App extends Component {
 
@@ -30,34 +30,36 @@ class App extends Component {
     this.setState({ account: accounts[0] })
 
     const networkId = await web3.eth.net.getId()
-    const networkData = AuctionItem.networks[networkId]
-    if(networkData) {
-      const abi = AuctionItem.abi
+    const networkData = AuctionFactory.networks[networkId]
+    if (networkData) {
+      const abi = AuctionFactory.abi
       const address = networkData.address
       const contract = new web3.eth.Contract(abi, address)
+      console.log("all methods available >>>>",contract.methods);
+      
       this.setState({ contract })
-      const totalSupply = await contract.methods.totalSupply().call()
-      this.setState({ totalSupply })
+    // const totalSupply = await contract.methods.totalSupply().call()
+    //   this.setState({ totalSupply })
       // Load auctionItems
-      for (var i = 1; i <= totalSupply; i++) {
-        const auctionItem = await contract.methods.auctionItems(i - 1).call()
-        this.setState({
-          auctionItems: [...this.state.auctionItems, auctionItem]
-        })
-      }
+      // for (var i = 1; i <= totalSupply; i++) {
+      //   const auctionItem = await contract.methods.auctionItems(i - 1).call()
+      //   this.setState({
+      //     auctionItems: [...this.state.auctionItems, auctionItem]
+      //   })
+      // }
     } else {
       window.alert('Smart contract not deployed to detected network.')
     }
   }
 
-  mint = (auctionItem) => {
-    this.state.contract.methods.mint(auctionItem).send({ from: this.state.account })
-    .once('receipt', (receipt) => {
-      this.setState({
-        auctionItems: [...this.state.auctionItems, auctionItem]
-      })
-    })
-  }
+  // mint = (auctionItem) => {
+  //   this.state.contract.methods.mint(auctionItem).send({ from: this.state.account })
+  //     .once('receipt', (receipt) => {
+  //       this.setState({
+  //         auctionItems: [...this.state.auctionItems, auctionItem]
+  //       })
+  //     })
+  // }
 
   constructor(props) {
     super(props)
@@ -65,8 +67,65 @@ class App extends Component {
       account: '',
       contract: null,
       totalSupply: 0,
-      auctionItems: []
+      auctionItems: [],
+      value1: '',
+      value2: '',
+      value3: ''
     }
+
+    this.updateInput1 = this.updateInput1.bind(this);
+    this.updateInput2 = this.updateInput2.bind(this);
+    this.updateInput3 = this.updateInput3.bind(this);
+    this.updateInput4 = this.updateInput4.bind(this);
+    this.updateInput5 = this.updateInput5.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  updateInput1(event) {
+    this.setState({ value1: event.target.value });
+    console.log(this.state.value1);
+  }
+
+  updateInput2(event) {
+    this.setState({ value2: event.target.value });
+    console.log(this.state.value2);
+  }
+
+  updateInput3(event) {
+    this.setState({ value3: event.target.value });
+    console.log(this.state.value3);
+  }
+  updateInput4(event) {
+    this.setState({ value4: event.target.value });
+    console.log(this.state.value3);
+  }
+  updateInput5(event) {
+    this.setState({ value5: event.target.value });
+    console.log(this.state.value3);
+  }
+
+  handleSubmit(event) {
+    let values = [this.state.value1, parseInt(this.state.value2), parseInt(this.state.value3), parseInt(this.state.value4),this.state.value5]
+    console.log("I'm called" + typeof(values[2]));
+    console.log("contract methids >>> ", this.state.contract.methods);
+    
+    // parseInt(value1)
+    // //Invoke the function here
+     this.state.contract.methods.createAuction(values[0],values[1],values[2],values[3],values[4])
+    .send({from: this.state.account, gas : 5000000})
+    .then(console.log
+    )
+    // .once('receipt', (receipt) => {
+      // console.log("createAuction >>>>>>>>>>>>>>>>>>>> ",receipt);
+    // })
+    this.state.contract.methods.returnAllAuctions().call()
+     .then(
+      console.log
+    );
+
+
+    //end
+    event.preventDefault();
   }
 
   render() {
@@ -75,7 +134,7 @@ class App extends Component {
         <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
           <a
             className="navbar-brand col-sm-3 col-md-2 mr-0"
-            href="http://www.dappuniversity.com/bootcamp"
+            href=""
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -92,37 +151,48 @@ class App extends Component {
             <main role="main" className="col-lg-12 d-flex text-center">
               <div className="content mr-auto ml-auto">
                 <h1>Issue Token</h1>
-                <form onSubmit={(event) => {
-                  event.preventDefault()
-                  const auctionItem = this.auctionItem.value
-                  this.mint(auctionItem)
-                }}>
+                <form onSubmit={this.handleSubmit}>
                   <input
-                    type='text'
+                    type='text1'
                     className='form-control mb-1'
-                    placeholder='e.g. Auction name'
-                    ref={(input) => { this.auctionItem = input }}
+                    placeholder='Field 1'
+                    onChange={this.updateInput1}
+                  />
+                  <input
+                    type='text2'
+                    className='form-control mb-1'
+                    placeholder='Field 2'
+                    onChange={this.updateInput2}
+                  />
+                  <input
+                    type='text3'
+                    className='form-control mb-1'
+                    placeholder='Field 3'
+                    onChange={this.updateInput3}
+                  />
+                  <input
+                    type='text4'
+                    className='form-control mb-1'
+                    placeholder='Field 4'
+                    onChange={this.updateInput4}
+                  />
+                  <input
+                    type='text5'
+                    className='form-control mb-1'
+                    placeholder='Field 5'
+                    onChange={this.updateInput5}
                   />
                   <input
                     type='submit'
                     className='btn btn-block btn-primary'
-                    value='MINT'
+                    value='submit'
+
                   />
                 </form>
               </div>
             </main>
           </div>
-          <hr/>
-          <div className="row text-center">
-            { this.state.auctionItems.map((auctionItem, key) => {
-              return(
-                <div key={key} className="col-md-3 mb-3">
-                  <div className="token" style={{ backgroundauctionItem: auctionItem }}></div>
-                  <div>{auctionItem}</div>
-                </div>
-              )
-            })}
-          </div>
+          <hr />
         </div>
       </div>
     );
