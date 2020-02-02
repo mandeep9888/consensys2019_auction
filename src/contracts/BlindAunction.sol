@@ -1,20 +1,37 @@
 pragma solidity ^0.5.0;
+import "./AuctionItem.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 // import "@openzeppelin/contracts/token/ERC721/ERC721Full.sol";
 
 contract AuctionFactory{
     BlindAuction[] public auctions;
-    function createAuction (uint _startPrice, uint _startBlock, uint _endBlock, string memory _ipfsHash)
+    mapping (string => address) public auctionToAddress;
+    mapping (string => address) public tokenNameToAddress;
+    AuctionItem newToken;
+    address newAuc;
+    constructor() public {
+        newToken = new AuctionItem();
+        newAuc = address(newToken);
+    }
+    function createAuction (string memory _auctionName, uint _startPrice, uint _startBlock, uint _endBlock, string memory _ipfsHash)
       public
       {
         require(_startPrice > 0,"Start Price should be greater than zero");
         // set the new instance
-        BlindAuction newAuction = new BlindAuction(msg.sender, _startPrice , _startBlock, _endBlock, _ipfsHash);
+        BlindAuction newAuction = new BlindAuction(msg.sender, newAuc, _auctionName, _startPrice , _startBlock, _endBlock, _ipfsHash);
+        // tokenNameToAddress[_auctionName] = address(newToken);
         // push the auction address to auctions array
         auctions.push(newAuction);
+        auctionToAddress[_auctionName] = address(newAuction);
     }
     function returnAllAuctions() public view returns(BlindAuction[] memory){
         return auctions;
+    }
+    function getAuctionAddress( string memory _auctionName) public view returns (address ){
+        return auctionToAddress[_auctionName];
+    }
+    function gettokenNameToAddress( string memory _auctionName) public view returns (address ){
+        return tokenNameToAddress[_auctionName];
     }
 }
 
@@ -25,28 +42,37 @@ contract BlindAuction {
     uint public startBlock;
     uint public endBlock;
     string public ipfsHash;
+    string public auctionName;
+    AuctionItem newToken;
 
     // state
     bool public canceled;
     uint public highestBindingBid;
     address public highestBidder;
+    uint public tokenID;
     mapping(address => uint256) public fundsByBidder;
     bool ownerHasWithdrawn;
     event BidPlaced(address bidder, uint bid, address highestBidder, uint highestBid, uint highestBindingBid);
     event Withdraw(address withdrawer, address withdrawalAccount, uint amount);
     event BidCanceled();
 
-    constructor(address _owner, uint _startPrice, uint _startBlock, uint _endBlock, string memory _ipfsHash)
+    constructor(address _owner, address _newToken, string memory _auctionName, uint _startPrice, uint _startBlock, uint _endBlock, string memory _ipfsHash)
         public
         {
         require(_startBlock < _endBlock,"starting block should be greater than the ending block");
-        require(_startBlock < block.number,"start block number should be greater than the current block number");
+        require(_startBlock > block.number,"start block number should be greater than the current block number");
         require(_owner != address(0),"owner address should be valid");
         owner = _owner;
+        // tokenID = _tokenID;
+        auctionName = _auctionName;
         bidIncrement = _startPrice;
         startBlock = _startBlock;
         endBlock = _endBlock;
         ipfsHash = _ipfsHash;
+        // newToken = new AuctionItem();
+        newToken = AuctionItem(_newToken);
+        tokenID = newToken.mint(_auctionName);
+        // mint(msg.sender, _tokenID);
     }
     modifier onlyOwner {
         require(msg.sender == owner,"only owner is authorized to perform this action");
@@ -186,6 +212,7 @@ contract BlindAuction {
                 withdrawalAccount = highestBidder;
                 withdrawalAmount = highestBindingBid;
                 ownerHasWithdrawn = true;
+                newToken.transferToken(owner, withdrawalAccount, tokenID);
 
             } else if (msg.sender == highestBidder) {
                 // the highest bidder should only be allowed to withdraw the difference between their
